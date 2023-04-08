@@ -8,7 +8,7 @@ class NPClient:
         self.username = username
         self.password = password
         self.cookies = NPCookieJar(text_cookie)
-        self.query = NPQuery(os.getenv('PROXY_PACKETSTREAM'))
+        self.query = NPQuery(os.getenv('PROXY_WEBSHARE'))
 
     # Registers for account
     async def register(self, username, password, email, dob=None, security=None):
@@ -120,7 +120,7 @@ class NPClient:
         self.cookies.import_from_response(res)
 
     # Creates pet (after register)
-    async def create_pet(self, pet_name):
+    async def create_pet(self, pet_name, pet_type):
         ### Step 1 -- https://www.neopets.com/reg/process_createpet.phtml
         # neopet_name	"***"
         # selected_pet	"tuskaninny"
@@ -134,7 +134,7 @@ class NPClient:
 
         res = await self.query.post('https://www.neopets.com/reg/process_createpet.phtml', data={
             'neopet_name':	pet_name,
-            'selected_pet':	"tuskaninny",
+            'selected_pet':	pet_type,
             'selected_pet_colour':	"green",
             'selected_item':	"",
             'gender':	"male",
