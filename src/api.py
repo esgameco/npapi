@@ -21,16 +21,16 @@ class NPAPI:
             await client.register(username, password, email, dob=dob)
             # print('Registered')
 
-            # Creates pet
-            await asyncio.sleep(2)
-            pet_name = gen.gen_pet_name()
-            pet_type = gen.gen_pet_type()
-            await client.create_pet(pet_name, pet_type)
+            # # Creates pet
+            # await asyncio.sleep(2)
+            # pet_name = gen.gen_pet_name()
+            # pet_type = gen.gen_pet_type()
+            # await client.create_pet(pet_name, pet_type)
 
             # Donates
-            # for i in range(5):
-            await asyncio.sleep(1)
-            await client.donate(2500)
+            for i in range(25):
+                await asyncio.sleep(0.5)
+                await client.donate(100)
             # await client.get_items()
             # print('Donated')
         except Exception:

@@ -31,10 +31,11 @@ async def test_client_register():
 
     # Creates pet
     pet_name = gen.gen_pet_name()
-    await client.create_pet(pet_name)
+    pet_type = gen.gen_pet_type()
+    await client.create_pet(pet_name, pet_type)
 
     await client.donate(2500)
-    await client.get_np()
+    # await client.get_np()
 
     # # Uses auth code from email
     # await asyncio.sleep(7)

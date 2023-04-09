@@ -93,7 +93,7 @@ class NPClient:
         res_6 = await self.query.post('https://www.neopets.com/reg/page4.phtml',
                                       cookies=self.cookies.get_all())
         self.cookies.import_from_response(res_6)
-    
+
     # Get activation code from email given (tempmail)
     async def get_activation_code(self, email):
         email_hash = hashlib.md5(email.encode()).hexdigest()
