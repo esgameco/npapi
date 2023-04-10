@@ -8,7 +8,7 @@ class NPQuery:
         self.proxy = proxy
         self.proxy_works = False
         self.default_headers = self._generate_default_headers()
-        self._MAX_TRIES = 3
+        self._MAX_TRIES = 7
     
     # Generates default headers
     def _generate_default_headers(self):
