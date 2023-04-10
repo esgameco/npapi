@@ -1,3 +1,3 @@
+from .database import NPDB
 
-
-__all__ = ()
+__all__ = (NPDB)

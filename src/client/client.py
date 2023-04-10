@@ -10,6 +10,11 @@ class NPClient:
         self.cookies = NPCookieJar(text_cookie)
         self.query = NPQuery(os.getenv('PROXY_WEBSHARE'))
 
+    # Checks if registered or logged in (only to be used after registration or login)
+    async def check_has_auth(self):
+        session_token = self.cookies.get('neologin')
+        return session_token is not None
+
     # Registers for account
     async def register(self, username, password, email, dob=None, security=None):
         ### Resister Page (get cookies) -- https://www.neopets.com/signup/index.phtml
@@ -154,15 +159,15 @@ class NPClient:
     
     # Gets current neopoints amount (TODO: FIX)
     async def get_np(self):
-        res = await self.query.get('https://www.neopets.com/objects.phtml', 
+        res = await self.query.get('https://www.neopets.com/myaccount.phtml', 
                                    cookies=self.cookies.get_all())
-        self.cookies.import_from_response(res)
+        # self.cookies.import_from_response(res)
 
-        mat = '<span id="npanchor" class="np-text__2020">'
+        mat = ' NP: <a id=\'npanchor\' href="/inventory.phtml">'
         ind = res.text.find(mat)+len(mat)
         ind_end = res.text[ind:].find('<')
         
-        return res.text[ind:ind+ind_end].replace(',', '')
+        return int(res.text[ind:ind+ind_end].replace(',', ''))
 
     # Grabs Items From Money Tree
     async def get_items(self):
