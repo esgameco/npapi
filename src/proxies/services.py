@@ -17,6 +17,23 @@ class NPProxyService:
             proxies.append(await self.get_new())
             await asyncio.sleep(slp)
         return proxies
+    
+class NPWebshareService(NPProxyService):
+    def __init__(self):
+        super().__init__()
+
+    def format(self, proxy_raw):
+        return f'http://{proxy_raw["username"]}:{proxy_raw["password"]}@{proxy_raw["proxy_address"]}:{proxy_raw["port"]}/'
+
+    async def get_list(self): # Only gets 100. If you have more, you can use pagination.
+        res = await self.query.get("https://proxy.webshare.io/api/v2/proxy/listmode=direct&country_code_in=US%2CFR&ordering=-valid%2Cproxy_address&page=1&page_size=100", query_headers={
+            "Token": os.getenv('API_WEBSHARE'),
+        })
+
+        data = res.json()
+        if data and len(data) > 0:
+            return [self.format(x) for x in data]
+        return None
 
 class NPEphemeralService(NPProxyService):
     def __init__(self):
