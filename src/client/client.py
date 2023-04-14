@@ -130,7 +130,7 @@ class NPClient:
             print(e)
         return None
     
-    # Gets text from messages
+    # Gets text from http response
     async def _get_text(self, res) -> Optional[str]:
         """Returns fixed text of a result"""
         try:
