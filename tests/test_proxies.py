@@ -5,7 +5,8 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 
-from src import NPClient, NPGenerateInfo, NPProxyManager, NPProxyDB, NPEphemeralService, NPProxyListService, NPSpysService, NPGeonodeService, NPProxyScrapeService, NPSpeedXService, NPJetkaiService, NPProxyMasterService
+from src import NPClient, NPGenerateInfo, NPProxyManager, NPProxyDB, NPEphemeralService, NPProxyListService, NPSpysService, NPGeonodeService, NPProxyScrapeService, NPSpeedXService, NPJetkaiService, NPProxyMasterService, NPWebshareService
+from .test_client import do_activate, do_create_pet, do_register
 
 @pytest.mark.asyncio
 async def test_proxy_db_table():
@@ -24,8 +25,17 @@ async def test_proxy_list():
         # os.getenv('PROXY_WEBSHARE'),
         'http://216.137.184.253:80/'
     ]
-    await proxy_manager.test_proxies(proxies, 'webshare')
+    await proxy_manager.test_proxies(proxies, 'random')
     assert await proxy_manager.db.get_all_proxies() is not None
+
+@pytest.mark.asyncio
+async def test_proxy_service_webshare(): # Paid
+    proxy_manager = NPProxyManager()
+    await proxy_manager.init_testing()
+    
+    service = NPWebshareService()
+    proxies = await service.get_num_new(1)
+    await proxy_manager.test_proxies_fast(proxies, 'webshare', verbose=True, add_to_db=True)
 
 @pytest.mark.asyncio
 async def test_proxy_service_eph(): # Paid
@@ -37,7 +47,7 @@ async def test_proxy_service_eph(): # Paid
     await proxy_manager.test_proxies_fast(proxies, 'ephemeral', verbose=True)
 
 @pytest.mark.asyncio
-async def test_proxy_service_pl(): # 3 / 10s
+async def test_proxy_service_pl(): # 3 / 10s                                                                                                                                                                                23
     proxy_manager = NPProxyManager()
     await proxy_manager.init_testing()
     
@@ -64,7 +74,7 @@ async def test_proxy_service_geonode(): # 1 / 20s
     await proxy_manager.test_proxies_fast(proxies, 'geonode', verbose=True)
 
 @pytest.mark.asyncio
-async def test_proxy_service_ps(): # 150 / 1m
+async def test_proxy_service_ps(): # 60 / 3m
     proxy_manager = NPProxyManager()
     await proxy_manager.init_testing()
     
@@ -73,7 +83,7 @@ async def test_proxy_service_ps(): # 150 / 1m
     await proxy_manager.test_proxies_fast(proxies, 'proxyscrape', verbose=True)
 
 @pytest.mark.asyncio
-async def test_proxy_service_speedx(): # 150 / 2.5m
+async def test_proxy_service_speedx(): # 70 / 7m
     proxy_manager = NPProxyManager()
     await proxy_manager.init_testing()
     
@@ -107,3 +117,23 @@ async def test_proxy_service_pm_socks(): # 0/x
     service = NPProxyMasterService()
     proxies = await service.get_socks5_list()
     await proxy_manager.test_proxies_fast(proxies, 'proxymastersocks', verbose=True)
+
+@pytest.mark.asyncio
+async def test_proxy_random(): # Gets random proxy and tests it on neopets (requires proxies to be in databases)
+    proxy_manager = NPProxyManager()
+    await proxy_manager.init()
+    
+    await proxy_manager.populate_proxies()
+    proxy = await proxy_manager.get_random()
+
+    client = NPClient(proxy=proxy)
+    gen = NPGenerateInfo()
+    user_info = await do_register(client, gen)
+    await asyncio.sleep(1)
+    await do_create_pet(client, gen)
+    await asyncio.sleep(10)
+    await client.donate(100)
+    assert client.get_np() == 2400
+    # await do_activate(client, gen, user_info)
+
+    print(user_info)

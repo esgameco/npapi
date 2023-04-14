@@ -4,7 +4,7 @@ import asyncpg
 
 from ..db import NPDB
 
-class NPProxyDB(NPDB):
+class NPClientDB(NPDB):
     def __init__(self, host=None):
         super().__init__(host)
     

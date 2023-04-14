@@ -8,3 +8,4 @@ src/query/__pycache__
 src/client/__pycache__
 src/db/__pycache__
 src/proxies/__pycache__
+src/exceptions/__pycache__
