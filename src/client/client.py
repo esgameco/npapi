@@ -11,24 +11,7 @@ from typing import Optional
 
 from ..query import NPQuery
 from ..exceptions import *
-
-def retry_decorator(max_retries=3, delay=1):
-    def decorator(function):
-        @functools.wraps(function)
-        async def wrapper(*args, **kwargs):
-            retries = 0
-            while retries < max_retries:
-                try:
-                    return await function(*args, **kwargs)
-                except Exception as e:
-                    retries += 1
-                    print(f"Attempt {retries} failed with exception: {e}")
-                    if retries < max_retries:
-                        await asyncio.sleep(delay)
-                    else:
-                        raise e
-        return wrapper
-    return decorator
+from .helpers import retry_decorator
 
 class NPClient:
     def __init__(self, 
@@ -47,7 +30,7 @@ class NPClient:
 
     # Checks if registered or logged in (only to be used after registration or login)
     async def check_has_auth(self) -> bool:
-        session_token = self.query.client.cookie_jar.filter_cookies('http://neopets.com/').get('neologin') # .filter_cookies('neopets.com/') # .get('neologin')
+        session_token = self.query.client.cookie_jar.filter_cookies('http://neopets.com/').get('neologin')
         return session_token is not None and len(session_token.value) > 10
     
     @retry_decorator()
@@ -132,7 +115,7 @@ class NPClient:
     
     # Gets text from http response
     async def _get_text(self, res) -> Optional[str]:
-        """Returns fixed text of a result"""
+        """Returns fixed text of a response"""
         try:
             return self._fix_text(await res.text())
         except Exception as e:
