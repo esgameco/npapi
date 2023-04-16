@@ -1,3 +1,12 @@
+"""
+ _____          _       ___ _ _            _   
+/__   \___  ___| |_    / __\ (_) ___ _ __ | |_ 
+  / /\/ _ \/ __| __|  / /  | | |/ _ \ '_ \| __|
+ / / |  __/\__ \ |_  / /___| | |  __/ | | | |_ 
+ \/   \___||___/\__| \____/|_|_|\___|_| |_|\__|
+                                               
+"""
+
 import pytest
 import os
 import asyncio
@@ -18,13 +27,14 @@ from src import NPClient, NPGenerateInfo, PetCreationError, RegisterError
 async def do_register(client, gen):
     for i in range(3):
         try:
-            username = gen.gen_username()
-            password = gen.gen_password()
-            email = username + "@cevipsa.com"
-            dob = gen.gen_dob()
-            await client.register(username, password, email, dob=dob)
+            # username = gen.gen_username()
+            # password = gen.gen_password()
+            # email = username + "@cevipsa.com"
+            # dob = gen.gen_dob()
+            user_info = await gen.gen_user_info()
+            await client.register(**user_info)
 
-            return { 'username': username, 'password': password, 'email': email, 'dob': dob }
+            return user_info
         except RegisterError as e:
             print(e)
             await asyncio.sleep(2)

@@ -1,17 +1,29 @@
+"""
+   ___               _        __       
+  / _ \___ _ __     (_)_ __  / _| ___  
+ / /_\/ _ \ '_ \    | | '_ \| |_ / _ \ 
+/ /_\\  __/ | | |   | | | | |  _| (_) |
+\____/\___|_| |_|___|_|_| |_|_|  \___/ 
+               |_____|                 
+"""
+
 from faker import Faker
 import random
+
+from ..email import NPEmailManager
 
 class NPGenerateInfo:
     def __init__(self):
         self.fake = Faker()
         self.email_provider = "@cevipsa.com"
+        self.email_manager = NPEmailManager()
     
-    def gen_user_info(self):
+    async def gen_user_info(self):
         username = self.gen_username()
         return {
             'username': self.gen_username(),
             'password': self.gen_password(),
-            'email': self.gen_email(),
+            'email': await self.gen_email(),
             'dob': self.gen_dob()
         }
     
@@ -21,8 +33,9 @@ class NPGenerateInfo:
     def gen_password(self):
         return self.fake.password() + str(random.randint(99, 999))
 
-    def gen_email(self):
-        return self.gen_username() + self.email_provider
+    async def gen_email(self):
+        # return self.gen_username() + self.email_provider
+        return await self.email_manager.gen_email()
 
     def gen_dob(self):
         return {

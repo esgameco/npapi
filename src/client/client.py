@@ -1,3 +1,12 @@
+"""
+   ___ _ _            _   
+  / __\ (_) ___ _ __ | |_ 
+ / /  | | |/ _ \ '_ \| __|
+/ /___| | |  __/ | | | |_ 
+\____/|_|_|\___|_| |_|\__|
+                          
+"""
+
 import os
 import hashlib
 import json
@@ -106,7 +115,7 @@ class NPClient:
     
     # Fixes text from messages
     def _fix_text(self, msg: str) -> Optional[str]:
-        """Fixes text in messages that contain / or \ """
+        """Fixes text in messages that contain / or \\"""
         try:
             return msg.replace('/', '').replace('\n', '').replace('\t', '').replace('\r', '').replace('\\', '')
         except Exception as e:
@@ -330,7 +339,7 @@ class NPClient:
                 'action': 'beginroll',
             })
             roll_res = self._get_json(await res_3.text())
-            print(f"Trudy's Surprise: Won {roll_res['prizes']}. Now have {roll_res['adjustedNp']} NP.")
+            print(f"Trudy's Surprise: Won {roll_res['prizes'][0]['value']}. Now have {roll_res['adjustedNp']} NP.")
             await asyncio.sleep(0.7)
             res_4 = await self.query.post('https://www.neopets.com/trudydaily/ajax/claimprize.php', {
                 'action': 'prizeclaimed',

@@ -1,3 +1,12 @@
+"""
+   _        _   _       _ _   _           
+  /_\   ___| |_(_)_   _(_) |_(_) ___  ___ 
+ //_\\ / __| __| \ \ / / | __| |/ _ \/ __|
+/  _  \ (__| |_| |\ V /| | |_| |  __/\__ \
+\_/ \_/\___|\__|_| \_/ |_|\__|_|\___||___/
+                                          
+"""
+
 from .client import NPClient
 from .helpers import NPHelpers
 
@@ -30,25 +39,46 @@ class NPActivityClient(NPClient):
 
     async def daily_puzzle(self):
         """TODO https://www.jellyneo.net/?go=dailypuzzle"""
+        res = await self.query.get('https://www.jellyneo.net/?go=dailypuzzle')
+        msg = await res.text()
+
+        NPHelpers.search('<strong>Prize:</strong> .* NP</p>', msg)
         
-    async def rich_slorg(self):
+    async def rich_slorg(self) -> bool:
         """Rich Slorg Minigame
         
-        Avg
+        (avg 50 np / day)
         """
-        pass
+        res = await self.query.get("https://www.neopets.com/shop_of_offers.phtml?slorg_payout=yes")
+        msg = await res.text()
 
-    async def wishing_well(self):
+        return 'Something is happening...' not in msg
+
+    async def wishing_well(self) -> int:
         """Wishing Well Minigame
         
         7 wishes / day 
         21 np / wish
 
+        returns number of wishing well successful attempts
+
         (small chance of big $)
         """
-        # GET https://www.neopets.com/wishing.phtml
-        # POST https://www.neopets.com/process_wishing.phtml donation: 21 wish: Graffiti Skateboard
-        pass
+        res_1 = await self.query.get('https://www.neopets.com/wishing.phtml')
+        msg = await res_1.text()
+        if "You can only make 7 wishes a day" in msg:
+            print("You are out of wishes for today.")
+            return 0
+
+        try:
+            res_2 = await self.query.post('https://www.neopets.com/process_wishing.phtml', data={
+                'donation': 21, 
+                'wish': 'Graffiti Skateboard'
+            })
+            return await self.wishing_well() + 1
+        except Exception as e:
+            print('Wishing Well Error')
+        
 
     async def neggsweeper(self):
         """Neggsweeper Minigame TODO

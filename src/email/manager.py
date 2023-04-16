@@ -1,6 +1,16 @@
+"""
+   __                _ _                                            
+  /__\ __ ___   __ _(_) |   /\/\   __ _ _ __   __ _  __ _  ___ _ __ 
+ /_\| '_ ` _ \ / _` | | |  /    \ / _` | '_ \ / _` |/ _` |/ _ \ '__|
+//__| | | | | | (_| | | | / /\/\ \ (_| | | | | (_| | (_| |  __/ |   
+\__/|_| |_| |_|\__,_|_|_| \/    \/\__,_|_| |_|\__,_|\__, |\___|_|   
+                                                    |___/           
+"""
+
 import aiohttp
 import asyncio
 import json
+import re
 
 from ..query import NPQuery
 
@@ -28,7 +38,7 @@ class NPEmailManager:
         # Find the Neopets activation email
         activation_email_id = None
         for message in messages:
-            if message["from"] == "noreply@neopets.com" and "activation" in message["subject"].lower():
+            if 'neopets' in message["from"] and "activation" in message["subject"].lower():
                 activation_email_id = message["id"]
                 break
         if not activation_email_id:
@@ -39,7 +49,7 @@ class NPEmailManager:
         email_content = json.loads(await res_2.text())
 
         # Extract the activation code from the email content (you may need to modify the parsing logic)
-        activation_code = email_content["textBody"].split("code: ")[1].split("\n")[0].strip()
+        activation_code = re.search(r'\?code=([A-Za-z0-9]+)', email_content["body"])
 
         return activation_code
 
