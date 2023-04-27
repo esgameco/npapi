@@ -1,3 +1,13 @@
+"""
+ _____          _       ___ _ _            _   
+/__   \___  ___| |_    / __\ (_) ___ _ __ | |_ 
+  / /\/ _ \/ __| __|  / /  | | |/ _ \ '_ \| __|
+ / / |  __/\__ \ |_  / /___| | |  __/ | | | |_ 
+ \/   \___||___/\__| \____/|_|_|\___|_| |_|\__|
+                                               
+"""
+
+import logging
 import pytest
 import os
 import asyncio
@@ -12,19 +22,20 @@ load_dotenv()
 
 from fake_useragent import UserAgent
 
-from src import NPClient, NPGenerateInfo, PetCreationError, RegisterError
+from src import NPClient, NPGenerateInfo, PetCreationError, RegisterError, NPClientDB
 
 # Helper function to register an account and return info
 async def do_register(client, gen):
     for i in range(3):
         try:
-            username = gen.gen_username()
-            password = gen.gen_password()
-            email = username + "@cevipsa.com"
-            dob = gen.gen_dob()
-            await client.register(username, password, email, dob=dob)
+            # username = gen.gen_username()
+            # password = gen.gen_password()
+            # email = username + "@cevipsa.com"
+            # dob = gen.gen_dob()
+            user_info = await gen.gen_user_info()
+            await client.register(**user_info)
 
-            return { 'username': username, 'password': password, 'email': email, 'dob': dob }
+            return user_info
         except RegisterError as e:
             print(e)
             await asyncio.sleep(2)
@@ -43,15 +54,37 @@ async def do_create_pet(client, gen):
     return None
 
 # Activates account
-async def do_activate(client, gen, user_info):
+async def do_activate(client, gen, user_info=None):
     try:
-        code = await client.get_activation_code(user_info['email'])
+        if user_info:
+            code = await client.get_activation_code(user_info['email'])
+            await client.activate_code(code)
+            return True
+        code = await gen.email_manager.get_code(client.email)
         await client.activate_code(code)
         return True
     except Exception as e:
-        print(e)
+        logging.warning(e)
     return False
 
+# Creates account, creates pet, activates account
+async def create_account(client, gen):
+    user_info = await do_register(client, gen)
+    await asyncio.sleep(1)
+    pet_info = await do_create_pet(client, gen)
+    await asyncio.sleep(10)
+    activated = await do_activate(client, gen)
+    print('Account created', user_info)
+    return activated
+
+# SIDE EFFECT: Deletes client table (removes all current clients)
+@pytest.mark.asyncio
+async def test_client_db_table():
+    db = NPClientDB()
+    await db.init()
+    await db.delete_table('clients')
+    await db.create_table()
+    assert await db.check_table_exists('clients')
 
 @pytest.mark.asyncio
 async def test_client_get_activation_code():
