@@ -12,8 +12,8 @@ import re
 
 from typing import List
 
-from .db_client import NPClientDB
-from .db_activities import NPActivityInfoDB
+from ..db.db_client import NPClientDB
+from ..db.db_activities import NPActivityInfoDB
 from ..email import NPEmailManager
 from ..proxies import NPProxyManager
 from ..client import NPClient, NPFeatureClient
