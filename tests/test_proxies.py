@@ -1,12 +1,13 @@
-"""
- _____          _       ___               _           
-/__   \___  ___| |_    / _ \_ __ _____  _(_) ___  ___ 
-  / /\/ _ \/ __| __|  / /_)/ '__/ _ \ \/ / |/ _ \/ __|
- / / |  __/\__ \ |_  / ___/| | | (_) >  <| |  __/\__ \
- \/   \___||___/\__| \/    |_|  \___/_/\_\_|\___||___/
-                                                      
-"""
+#
+#   _____          _       ___               _           
+#  /__   \___  ___| |_    / _ \_ __ _____  _(_) ___  ___ 
+#    / /\/ _ \/ __| __|  / /_)/ '__/ _ \ \/ / |/ _ \/ __|
+#   / / |  __/\__ \ |_  / ___/| | | (_) >  <| |  __/\__ \
+#   \/   \___||___/\__| \/    |_|  \___/_/\_\_|\___||___/
+#                                                        
+#
 
+import random
 import pytest
 import os
 import asyncio
@@ -14,16 +15,26 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 
-from src import NPClient, NPGenerateInfo, NPProxyManager, NPProxyDB, NPEphemeralService, NPProxyListService, NPSpysService, NPGeonodeService, NPProxyScrapeService, NPSpeedXService, NPJetkaiService, NPProxyMasterService, NPWebshareService
+from src import NPClient, NPGenerateInfo, NPProxyManager, NPProxyDB, NPClientDB, NPClientManager, NPEphemeralService, NPProxyListService, NPSpysService, NPGeonodeService, NPProxyScrapeService, NPSpeedXService, NPJetkaiService, NPProxyMasterService, NPWebshareService
 from .test_client import do_activate, do_create_pet, do_register
 
+# SIDE EFFECT: Deletes proxy table (removes all current proxies)
 @pytest.mark.asyncio
 async def test_proxy_db_table():
     db = NPProxyDB()
     await db.init()
-    
+    await db.delete_table('proxies')
     await db.create_table()
     assert await db.check_table_exists('proxies')
+
+@pytest.mark.asyncio
+async def test_proxy_alter():
+    client_db = NPClientDB()
+    proxy_db = NPProxyDB()
+    await client_db.init()
+    await proxy_db.init()
+    await client_db.alter_table()
+    await proxy_db.alter_table()
 
 @pytest.mark.asyncio
 async def test_proxy_list():
@@ -38,94 +49,115 @@ async def test_proxy_list():
     assert await proxy_manager.db.get_all_proxies() is not None
 
 @pytest.mark.asyncio
+async def test_get_proxies(): # Gets all proxies from all services
+    client_manager = NPClientManager()
+    await client_manager.init()
+
+    services = [
+        # NPWebshareService(), # Paid service
+        NPSpysService(),
+        NPProxyScrapeService(),
+        NPSpeedXService(),
+        # NPJetkaiService(), # Stopped updating
+        # NPProxyMasterService(), # Majority don't work (uses outdated lists)
+    ]
+
+    proxies = []
+    for service in services:
+        proxies.extend(await service.get_list())
+    proxies = list(set(proxies))
+    random.shuffle(proxies)
+    await client_manager.proxy_manager.test_proxies_fast(proxies, 'random', verbose=True)
+
+@pytest.mark.asyncio
 async def test_proxy_service_webshare(): # Paid
-    proxy_manager = NPProxyManager()
-    await proxy_manager.init_testing()
+    client_manager = NPClientManager()
+    await client_manager.init()
     
     service = NPWebshareService()
-    proxies = await service.get_num_new(1)
-    await proxy_manager.test_proxies_fast(proxies, 'webshare', verbose=True, add_to_db=True)
+    proxies = await service.get_list()
+    await client_manager.proxy_manager.test_proxies_fast(proxies, 'webshare', verbose=True)
 
 @pytest.mark.asyncio
 async def test_proxy_service_eph(): # Paid
-    proxy_manager = NPProxyManager()
-    await proxy_manager.init_testing()
+    client_manager = NPClientManager()
+    await client_manager.init()
     
     service = NPEphemeralService()
     proxies = await service.get_num_new(1)
-    await proxy_manager.test_proxies_fast(proxies, 'ephemeral', verbose=True)
+    await client_manager.proxy_manager.test_proxies_fast(proxies, 'ephemeral', verbose=True)
 
 @pytest.mark.asyncio
 async def test_proxy_service_pl(): # 3 / 10s                                                                                                                                                                                23
-    proxy_manager = NPProxyManager()
-    await proxy_manager.init_testing()
+    client_manager = NPClientManager()
+    await client_manager.init()
     
     service = NPProxyListService()
     proxies = await service.get_list()
-    await proxy_manager.test_proxies_fast(proxies, 'proxylist', verbose=True)
+    await client_manager.proxy_manager.test_proxies_fast(proxies, 'proxylist', verbose=True)
 
 @pytest.mark.asyncio
 async def test_proxy_service_spys(): # 50 / 40s
-    proxy_manager = NPProxyManager()
-    await proxy_manager.init_testing()
+    client_manager = NPClientManager()
+    await client_manager.init()
     
     service = NPSpysService()
     proxies = await service.get_list()
-    await proxy_manager.test_proxies_fast(proxies, 'spys', verbose=True)
+    await client_manager.proxy_manager.test_proxies_fast(proxies, 'spys', verbose=True)
 
 @pytest.mark.asyncio
 async def test_proxy_service_geonode(): # 1 / 20s
-    proxy_manager = NPProxyManager()
-    await proxy_manager.init_testing()
+    client_manager = NPClientManager()
+    await client_manager.init()
     
     service = NPGeonodeService()
     proxies = await service.get_list()
-    await proxy_manager.test_proxies_fast(proxies, 'geonode', verbose=True)
+    await client_manager.proxy_manager.test_proxies_fast(proxies, 'geonode', verbose=True)
 
 @pytest.mark.asyncio
 async def test_proxy_service_ps(): # 60 / 3m
-    proxy_manager = NPProxyManager()
-    await proxy_manager.init_testing()
+    client_manager = NPClientManager()
+    await client_manager.init()
     
     service = NPProxyScrapeService()
     proxies = await service.get_list()
-    await proxy_manager.test_proxies_fast(proxies, 'proxyscrape', verbose=True)
+    await client_manager.proxy_manager.test_proxies_fast(proxies, 'proxyscrape', verbose=True)
 
 @pytest.mark.asyncio
 async def test_proxy_service_speedx(): # 70 / 7m
-    proxy_manager = NPProxyManager()
-    await proxy_manager.init_testing()
+    client_manager = NPClientManager()
+    await client_manager.init()
     
     service = NPSpeedXService()
-    proxies = await service.get_list()
-    await proxy_manager.test_proxies_fast(proxies, 'speedx', verbose=True)
+    proxies = await service.get_all()
+    await client_manager.proxy_manager.test_proxies_fast(proxies, 'speedx', verbose=True)
 
 @pytest.mark.asyncio
 async def test_proxy_service_jetkai(): # 150 / 3m
-    proxy_manager = NPProxyManager()
-    await proxy_manager.init_testing()
+    client_manager = NPClientManager()
+    await client_manager.init()
     
     service = NPJetkaiService()
     proxies = await service.get_list()
-    await proxy_manager.test_proxies_fast(proxies, 'jetkai', verbose=True)
+    await client_manager.proxy_manager.test_proxies_fast(proxies, 'jetkai', verbose=True)
 
 @pytest.mark.asyncio
 async def test_proxy_service_pm(): # 50/8000
-    proxy_manager = NPProxyManager()
-    await proxy_manager.init_testing()
+    client_manager = NPClientManager()
+    await client_manager.init()
     
     service = NPProxyMasterService()
     proxies = await service.get_list()
-    await proxy_manager.test_proxies_fast(proxies, 'proxymaster', verbose=True)
+    await client_manager.proxy_manager.test_proxies_fast(proxies, 'proxymaster', verbose=True)
 
 @pytest.mark.asyncio
 async def test_proxy_service_pm_socks(): # 0/x
-    proxy_manager = NPProxyManager()
-    await proxy_manager.init_testing()
+    client_manager = NPClientManager()
+    await client_manager.init()
     
     service = NPProxyMasterService()
     proxies = await service.get_socks5_list()
-    await proxy_manager.test_proxies_fast(proxies, 'proxymastersocks', verbose=True)
+    await client_manager.proxy_manager.test_proxies_fast(proxies, 'proxymastersocks', verbose=True)
 
 @pytest.mark.asyncio
 async def test_proxy_random(): # Gets random proxy and tests it on neopets (requires proxies to be in databases)

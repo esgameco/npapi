@@ -15,7 +15,7 @@ from ..db import NPDB
 
 class NPProxyDB(NPDB):
     def __init__(self, host=None):
-        super().__init__(host)
+        super().__init__(host, table_name='proxies')
     
     # Creates postgres table for proxies
     async def create_table(self):
@@ -27,8 +27,19 @@ class NPProxyDB(NPDB):
                     works boolean DEFAULT false,
                     npworks boolean DEFAULT false,
                     source text DEFAULT '',
-                    reports integer DEFAULT 0
+                    reports integer DEFAULT 0,
+                    created_at timestamp with time zone DEFAULT NOW(),
+                    updated_at timestamp with time zone DEFAULT NOW()
                 );
+            ''')
+    
+    # Alters table instead of deleting
+    async def alter_table(self):
+        async with self.pool.acquire() as conn:
+            await conn.execute('''
+                ALTER TABLE proxies 
+                ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
             ''')
     
     # Adds proxy to table
@@ -37,7 +48,11 @@ class NPProxyDB(NPDB):
             await conn.execute('''
                 INSERT INTO proxies (pstr, works, npworks, source, reports)
                 VALUES ($1, $2, $3, $4, $5)
-                ON CONFLICT (pstr) DO NOTHING;
+                ON CONFLICT (pstr) DO UPDATE
+                SET works = EXCLUDED.works,
+                    npworks = EXCLUDED.npworks,
+                    source = EXCLUDED.source,
+                    reports = EXCLUDED.reports;
             ''', proxy_str, works, np_works, source, reports)
     
     # Gets all proxies
@@ -47,12 +62,14 @@ class NPProxyDB(NPDB):
                 SELECT * FROM proxies;
             ''')
     
-    # Gets working np proxies
+    # Gets working np proxies (within 1 hour)
     async def get_working_proxies(self):
-        async with self.pool.acquire() as conn:
+        async with self.pool.acquire() as conn: # AND updated_at <= NOW() - INTERVAL '1 hour';
             return await conn.fetch('''
                 SELECT * FROM proxies
-                WHERE npworks = true AND reports <= 5;
+                WHERE
+                    npworks = true
+                    AND reports < 10;
             ''')
     
     # Reports proxy
@@ -60,7 +77,9 @@ class NPProxyDB(NPDB):
         async with self.pool.acquire() as conn:
             return await conn.execute('''
                 UPDATE proxies
-                SET reports = reports + 1
+                SET 
+                    reports = reports + 1, 
+                    updated_at = NOW()
                 WHERE pstr = $1;
             ''', pstr)
     

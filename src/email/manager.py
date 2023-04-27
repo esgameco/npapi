@@ -15,8 +15,8 @@ import re
 from ..query import NPQuery
 
 class NPEmailManager:
-    def __init__(self):
-        self.query = NPQuery()
+    def __init__(self, proxy:str=None):
+        self.query = NPQuery(proxy=proxy)
 
     async def gen_email(self):
         """Generates email to use for getting activation code"""
@@ -51,7 +51,7 @@ class NPEmailManager:
         # Extract the activation code from the email content (you may need to modify the parsing logic)
         activation_code = re.search(r'\?code=([A-Za-z0-9]+)', email_content["body"])
 
-        return activation_code
+        return activation_code[0].replace('?code=', '')
 
     async def close(self):
         await self.query.close()

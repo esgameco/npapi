@@ -13,13 +13,11 @@ import random
 from ..email import NPEmailManager
 
 class NPGenerateInfo:
-    def __init__(self):
+    def __init__(self, proxy:str=None):
         self.fake = Faker()
-        self.email_provider = "@cevipsa.com"
-        self.email_manager = NPEmailManager()
+        self.email_manager = NPEmailManager(proxy=proxy)
     
     async def gen_user_info(self):
-        username = self.gen_username()
         return {
             'username': self.gen_username(),
             'password': self.gen_password(),
@@ -34,7 +32,6 @@ class NPGenerateInfo:
         return self.fake.password() + str(random.randint(99, 999))
 
     async def gen_email(self):
-        # return self.gen_username() + self.email_provider
         return await self.email_manager.gen_email()
 
     def gen_dob(self):
