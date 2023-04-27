@@ -2,6 +2,11 @@
 
 A neopets API created with python/aiohttp, uses asyncpg for database. Supports multiple accounts.
 
+## Refactor Branch
+
+The complexity of the project has increased over time, and many inefficiencies have been overlooked. 
+The main goal of this branch is to remove all inefficiencies.
+
 ## Features
 - Supports registration, account activation, creating a pet, trudy's surprise, and multiple dailies.
 - Proxy services to find open proxies that work for neopets. Supports Socks proxies (maybe).
