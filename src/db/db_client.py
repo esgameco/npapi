@@ -11,51 +11,11 @@ import asyncio
 import asyncpg
 
 from .db_activities import NPClientActivityDB, NPActivityInfoDB
-from ..db import NPDB
+from .db_default import NPDefaultDB
 
-class NPClientDB(NPDB):
-    def __init__(self, host=None):
-        super().__init__(host, table_name='clients')
-        self.client_activity_db = NPClientActivityDB()
-        self.activity_info_db = NPActivityInfoDB()
-    
-    async def init(self):
-        await NPDB.init(self)
-        await self.client_activity_db.init()
-        await self.activity_info_db.init()
-    
-    async def close(self):
-        await NPDB.close(self)
-        await self.client_activity_db.close()
-        await self.activity_info_db.close()
-    
-    # Creates postgres table for proxies
-    async def create_table(self):
-        async with self.pool.acquire() as conn:
-            await conn.execute('''
-                CREATE TABLE IF NOT EXISTS clients(
-                    id serial PRIMARY KEY,
-                    username text UNIQUE DEFAULT '',
-                    password text DEFAULT '',
-                    email text DEFAULT '',
-                    cookie text DEFAULT '',
-                    np integer DEFAULT 0,
-                    client_type text DEFAULT 'worker',
-                    is_registered boolean DEFAULT false,
-                    is_activated boolean DEFAULT false,
-                    is_limited boolean DEFAULT false,
-                    created_at timestamp with time zone DEFAULT NOW(),
-                    updated_at timestamp with time zone DEFAULT NOW()
-                );
-            ''')
-    
-    # Alters table instead of deleting
-    async def alter_table(self):
-        async with self.pool.acquire() as conn:
-            await conn.execute('''
-                ALTER TABLE clients 
-                ADD COLUMN client_type text DEFAULT 'worker';
-            ''')
+class NPClientDB(NPDefaultDB):
+    def __init__(self, db):
+        super().__init__(db, table_name='clients')
     
     # Adds proxy to table
     async def add_account(self,
@@ -84,13 +44,6 @@ class NPClientDB(NPDB):
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
                 ON CONFLICT (username) DO NOTHING;
             ''', client.username, client.password, client.email, cookie, client.np, client.is_registered, client.is_activated)
-    
-    # Gets all clients
-    async def get_all(self):
-        async with self.pool.acquire() as conn:
-            return await conn.fetch('''
-                SELECT * FROM clients;
-            ''')
     
     # Gets activated clients
     async def get_activated(self, n: int=None):

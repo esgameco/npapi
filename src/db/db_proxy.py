@@ -11,7 +11,7 @@ import os
 import asyncio
 import asyncpg
 
-from ..db import NPDB
+from . import NPDB
 
 class NPProxyDB(NPDB):
     def __init__(self, host=None):

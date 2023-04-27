@@ -6,6 +6,7 @@ A neopets API created with python/aiohttp, uses asyncpg for database. Supports m
 
 The complexity of the project has increased over time, and many inefficiencies have been overlooked. 
 The main goal of this branch is to remove all inefficiencies.
+Using a database seems to be a big inefficiency. I will switch to in memory caching, then import/exporting to/from a database.
 
 ## Features
 - Supports registration, account activation, creating a pet, trudy's surprise, and multiple dailies.
