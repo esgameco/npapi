@@ -17,7 +17,7 @@ class NPClientDB(NPDefaultDB):
     email: str
     cookie: str
     np: int
-    type: str
+    client_type: str
     is_registered: bool
     is_activated: bool
     is_locked: bool
@@ -33,7 +33,7 @@ class NPClientDB(NPDefaultDB):
             'email': '',
             'cookie': '',
             'np': -1,
-            'type': 'worker',
+            'client_type': 'worker',
             'is_registered': False,
             'is_activated': False,
             'is_locked': False,
