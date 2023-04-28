@@ -6,90 +6,60 @@
 #  \____/|_|_|\___|_| |_|\__| /___,' \__,_|\__\__,_|_.__/ \__,_|___/\___|
 #                                                                        
 
-import os
-import asyncio
-import asyncpg
+import time
 
-from .db_activities import NPClientActivityDB, NPActivityInfoDB
 from .db_default import NPDefaultDB
 
 class NPClientDB(NPDefaultDB):
+    """
+    username: str (PRIMARY)
+    password: str
+    email: str
+    cookie: str
+    np: int
+    type: str
+    is_registered: bool
+    is_activated: bool
+    is_locked: bool
+    last_daily_at: time
+    """
     def __init__(self, db):
         super().__init__(db, table_name='clients')
     
-    # Adds proxy to table
-    async def add_account(self,
-                          username:str,
-                          password:str,
-                          email:str,
-                          cookie:str=None,
-                          np:int=None,
-                          is_registered:bool=False,
-                          is_activated:bool=False):
-        async with self.pool.acquire() as conn:
-            await conn.execute('''
-                INSERT INTO clients (username, password, email, cookie, np, is_registered, is_activated)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-                ON CONFLICT (username) DO NOTHING;
-            ''', username, password, email, cookie, np, is_registered, is_activated)
-        
-        await self.client_activity_db.add_account(username)
+    def add(self, val: dict) -> dict:
+        return self._add(val, {
+            'username': '',
+            'password': '',
+            'email': '',
+            'cookie': '',
+            'np': -1,
+            'type': 'worker',
+            'is_registered': False,
+            'is_activated': False,
+            'is_locked': False,
+            'last_daily_at': 0
+        }, 'username')
 
-    # Adds proxy to table
-    async def update(self, client):
-        cookie = await client.query.export_cookies()
-        async with self.pool.acquire() as conn:
-            await conn.execute('''
-                INSERT INTO clients (username, password, email, cookie, np, is_registered, is_activated)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-                ON CONFLICT (username) DO NOTHING;
-            ''', client.username, client.password, client.email, cookie, client.np, client.is_registered, client.is_activated)
+    def get_activated(self):
+        return self._get_on_func(lambda n: n['is_registered'] and 
+                                           n['is_activated'] and 
+                                           not n['is_locked'])
     
-    # Gets activated clients
-    async def get_activated(self, n: int=None):
-        async with self.pool.acquire() as conn:
-            if n is not None:
-                return await conn.fetch('''
-                    SELECT * FROM clients
-                    WHERE is_registered = true AND is_activated = true
-                    LIMIT $1;
-                ''', n)
-            return await conn.fetch('''
-                SELECT * FROM clients
-                WHERE is_registered = true AND is_activated = true;
-            ''')
+    def get_old(self):
+        return self._get_on_func(lambda n: n['is_registered'] and 
+                                           n['is_activated'] and 
+                                           not n['is_locked'] and 
+                                           time.time() - n['created_at'] > 86400)
     
-    # Gets accounts older than 24 hours
-    async def get_old_accounts(self, n: int=None):
-        async with self.pool.acquire() as conn:
-            if n is not None:
-                return await conn.fetch('''
-                    SELECT * FROM clients 
-                    WHERE is_registered = true 
-                    AND is_activated = true 
-                    AND created_at < NOW() - interval '24 hours'
-                    LIMIT $1;
-                ''', n)
-            return await conn.fetch('''
-                SELECT * FROM clients 
-                WHERE is_registered = true 
-                AND is_activated = true 
-                AND created_at < NOW() - interval '24 hours';
-            ''')
+    def get_rich(self, cutoff: int=50000):
+        return self._get_on_func(lambda n: n['is_registered'] and 
+                                           n['is_activated'] and 
+                                           not n['is_locked'] and 
+                                           time.time() - n['created_at'] > 86400 and 
+                                           n['np'] > cutoff)
     
-    # Gets activated clients
-    async def get_rich(self, cutoff: int=50000):
-        async with self.pool.acquire() as conn:
-            return await conn.fetch('''
-                SELECT * FROM clients
-                WHERE is_registered = true AND is_activated = true AND np > $1;
-            ''', cutoff)
-    
-    # Updates NP to current amount
-    async def update_np(self, username:str, new_np:int):
-        async with self.pool.acquire() as conn:
-            await conn.execute('''
-                UPDATE clients
-                SET np = $2
-                WHERE username = $1;
-            ''', username, new_np)
+    def get_daily(self):
+        return self._get_on_func(lambda n: n['is_registered'] and 
+                                           n['is_activated'] and 
+                                           not n['is_locked'] and 
+                                           time.time() - n['last_daily_at'] > 86400)

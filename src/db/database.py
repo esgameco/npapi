@@ -11,17 +11,15 @@
 #   Export/import to/from mongodb
 #
 
-import logging
-import os
-import asyncio
-import asyncpg
+import json
 
 class NPDB:
     def __init__(self):
         self._cache = {}
     
     def create_table(self, table_name: str, value: any={}):
-        self._cache[table_name] = value
+        if table_name not in self._cache:
+            self._cache[table_name] = value
 
     def set(self, key: any, value: any, table: str):
         self._cache[table][key] = value
@@ -30,7 +28,9 @@ class NPDB:
         self._cache[table].update(pairs)
     
     def get(self, key: any, table: str):
-        return self._cache[table][key]
+        if key in self._cache[table]:
+            return self._cache[table][key]
+        return None
     
     def get_many(self, func, table: str):
         return [x for x in self._cache[table].values() if func(x)]
@@ -45,3 +45,9 @@ class NPDB:
         for key in self._cache[table]:
             if func(key):
                 self._cache[table][key].pop()
+    
+    def export_db(self) -> str:
+        return json.dumps(self._cache)
+    
+    def import_db(self, db_str: str):
+        self._cache = json.loads(db_str)

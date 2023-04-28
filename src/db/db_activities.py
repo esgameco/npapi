@@ -5,16 +5,18 @@
 #  \_/ \_/\___|\__|_| \_/ |_|\__|\__, | /___,' \__,_|\__\__,_|_.__/ \__,_|___/\___|
 #                                |___/                                             
 
-import os
-import asyncio
-import asyncpg
-
 from .db_default import NPDefaultDB
 
 class NPActivityInfoDB(NPDefaultDB):
+    """
+    task: str
+    info: any
+    """
     def __init__(self, db):
         super().__init__(db, table_name='activity_info')
 
-class NPClientActivityDB(NPDefaultDB):
-    def __init__(self, db):
-        super().__init__(db, table_name='client_activities')
+    def add(self, val: dict) -> dict:
+        return self._add(val, {
+            'task': '',
+            'info': None
+        }, 'task')
